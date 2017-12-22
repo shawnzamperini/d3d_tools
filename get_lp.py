@@ -5,17 +5,18 @@
 # Author: Shawn Zamperini
 
 import MDSplus as mds
+import time
 
 
-def get_mds_active_probes(shot):
+def get_mds_active_probes(conn, shot):
     """
     Get the probes that were active during the shot. Used in main function.
         shot: the shot you want
     """
 
     # MDSplus connection to atlas where the data is store on the "LANGMUIR" tree.
-    conn = mds.Connection('atlas.gat.com')
-    conn.openTree("LANGMUIR", shot)
+    #conn = mds.Connection('atlas.gat.com')
+    #conn.openTree("LANGMUIR", shot)
 
     tmin = conn.get("\LANGMUIR::TOP.TMIN").data()
     tmax = conn.get("\LANGMUIR::TOP.TMAX").data()
@@ -62,7 +63,7 @@ def get_mds_active_probes(shot):
 
     return active
 
-def get_mds_lp_data(shot, mds_index):
+def get_mds_lp_data(conn, shot, mds_index):
     """
     Get LP data for a single probe. Used in main function.
         shot: the shot you want
@@ -70,9 +71,10 @@ def get_mds_lp_data(shot, mds_index):
             match the probe number (which is PNUM).
     """
 
+
     # MDS connection required through atlas tunnel.
-    conn = mds.Connection("atlas.gat.com")
-    conn.openTree("LANGMUIR", shot)
+    #conn = mds.Connection("atlas.gat.com")
+    #conn.openTree("LANGMUIR", shot)
 
     # Use correct form of probe name.
     if mds_index < 10:
@@ -123,16 +125,26 @@ def get_dict_of_lps(shot):
     shot: the shot you want the data for.
     """
 
+    start = time.time()
+
+    # MDS connection required through atlas tunnel.
+    conn = mds.Connection("atlas.gat.com")
+    conn.openTree("LANGMUIR", shot)
+
     # Get a dictionary with the probe active during this shot.
-    active = get_mds_active_probes(shot)
+    active = get_mds_active_probes(conn, shot)
     print()
 
     # Get a dictionary of each probe data, then store it all in one big dictionary.
     lps = {}
     for mds_index in active["mds_index"]:
-        lp_data = get_mds_lp_data(shot, mds_index)
+        lp_data = get_mds_lp_data(conn, shot, mds_index)
         probe_name = "probe " + str(lp_data["pnum"])
         lps[probe_name] = lp_data
         print("Data stored for " + str(probe_name) + " (MDS index " + str(mds_index) + ").")
 
+    end = time.time()
+
+    elapsed = end - start
+    print("Time elapsed: " + str(elapsed))
     return lps
